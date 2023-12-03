@@ -36,13 +36,12 @@ def manual_append(manual, position, color, size):
             instruction.append(size)
             manual.append(instruction)
     else:
-        instruction = list()
-        instruction.append(position)
-        instruction.append(color)
-        instruction.append(size)
-        manual.append(instruction)
-
-    return instruction            
+        if not manual or manual[-1][2] != -1:
+            instruction = list()
+            instruction.append(position)
+            instruction.append(color)
+            instruction.append(size)
+            manual.append(instruction)          
 
 def checkNotJoin(manual):
     for key, val in brick_boundary.items():
@@ -53,10 +52,16 @@ def checkNotJoin(manual):
                 sizes = [int(num) for num in l]
                 maxSize = max(sizes)
                 if maxSize == 1:
-                    if val[val.find(l) - 1] != 0:
-                        start = val.find('0' + l)
+                    if val.find(l) > 0:
+                        if val[val.find(l) - 1] != 0:
+                            start = val.find('0' + l) + 1
+                        else:
+                            start = val.find(l)
                     else:
-                        start = val.find(l)
+                        if val[val.find(l) + len(l)] == '0':
+                            start = val.find(l + '0')
+                        else:
+                            start = val.find(l)
                     for row in range(start, start + len(l)):
                         #print(row, key)
                         manual_Delete(manual, row, key)
@@ -148,5 +153,6 @@ def generate(brick):
                 manual_append(manual, separator, "-1", -1)
              
     #print_brickBoundary()
-    #checkNotJoin(manual)
+    manual.pop()
+    checkNotJoin(manual)
     return manual, height, width

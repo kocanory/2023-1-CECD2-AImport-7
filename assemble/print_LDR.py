@@ -63,24 +63,46 @@ def jsonToldraw(dir):
         data = json.load(json_data)   
     
     pageSeparator = data["PageSeparator"]
-
+    width = data["Width"]
     ldraw_file_content = ""
     latitude, longitude = 45.0, 0.0
     ldraw_file_content = f"0 !LPUB ASSEM CAMERA_ANGLES {latitude}   {longitude}\n"
-    ldraw_file_content += "0 STEP" + "\n"
+
+    assemble_content = ""
+    pl_max = 0
+    pl_set = set()
+    
     for sequence, entry in enumerate(data["Manual"]):
         if entry.get("Warning") :
             break
         if sequence +  1 in pageSeparator:
-            ldraw_file_content += "0 STEP" + "\n"
+            assemble_content += "0 STEP" + "\n"
+            pl_max = max(pl_max, len(pl_set))
+            pl_set.clear()
+            
         part_size = entry["Size"].split(" * ")
         part_size = int(float(part_size[0]))
         position = eval(entry["Position"])
         row, col = position
         part_definition = f"1 0 0 0 0 1 0 -1 0 {brick[part_size]}"
         brick_color = entry["Color"]
+        pl_set.add((brick_color, part_size))
         ldraw_command = f"1 {color[brick_color]} {col * 20 + offset[part_size]} 0 {row * 24} {part_definition}"               
-        ldraw_file_content += ldraw_command + "\n"
+        assemble_content += ldraw_command + "\n"
+        
+    pl_max = max(pl_max, len(pl_set))
+    
+    if width > 25:
+        scale = (23 / width)
+        scale = round(scale, 2)
+        ldraw_file_content += f"0 !LPUB ASSEM MODEL_SCALE GLOBAL{scale: .4f}" + "\n"
+    
+    if pl_max > 6:
+        ldraw_file_content += f"0 !LPUB PLI MODEL_SCALE GLOBAL{6 / pl_max: .4f}" + "\n"
+        ldraw_file_content += f"0 !LPUB PLI INSTANCE_COUNT FONT \"Arial,{(int)(36 * 6 / pl_max)},-1,5,75,0,0,0,0,0,Bold\"\n"
+    
+    ldraw_file_content += assemble_content
+        
     return ldraw_file_content
 
 def xmlToldraw(dir):
@@ -95,10 +117,19 @@ def xmlToldraw(dir):
     ldraw_file_content = ""
     latitude, longitude = 45.0, 0.0
     ldraw_file_content = f"0 !LPUB ASSEM CAMERA_ANGLES {latitude}   {longitude}\n"
-    ldraw_file_content += "0 STEP" + "\n"
+    
+    width = (int)(root.findtext("width"))
+    
+    assemble_content = ""
+    pl_max = 0
+    pl_set = set()
+    
     for sequence, inst in enumerate(instructions):
         if (str)(sequence + 1) in pageSeparator:
-            ldraw_file_content += "0 STEP" + "\n"
+            assemble_content += "0 STEP" + "\n"
+            pl_max = max(pl_max, len(pl_set))
+            pl_set.clear()
+        
         part_size = inst.findtext("Size").split(" * ")
         part_size = int(float(part_size[0]))
         
@@ -108,26 +139,63 @@ def xmlToldraw(dir):
         row, col = int(position[0]), int(position[1])
         part_definition = f"1 0 0 0 0 1 0 -1 0 {brick[part_size]}"
         brick_color = inst.findtext("Color")
+        pl_set.add((brick_color, part_size))
         ldraw_command = f"1 {color[brick_color]} {col * 20 + offset[part_size]} 0 {row * 24} {part_definition}"               
-        ldraw_file_content += ldraw_command + "\n"
+        assemble_content += ldraw_command + "\n"
+    
+    pl_max = max(pl_max, len(pl_set))
+    
+    if width > 25:
+        scale = (23 / width)
+        scale = round(scale, 2)
+        ldraw_file_content += f"0 !LPUB ASSEM MODEL_SCALE GLOBAL{scale: .4f}" + "\n"
+    
+    if pl_max > 6:
+        ldraw_file_content += f"0 !LPUB PLI MODEL_SCALE GLOBAL{6 / pl_max: .4f}" + "\n"
+        ldraw_file_content += f"0 !LPUB PLI INSTANCE_COUNT FONT \"Arial,{(int)(36 * 6 / pl_max)},-1,5,75,0,0,0,0,0,Bold\"\n"
+    
+    ldraw_file_content += assemble_content    
+    
     return ldraw_file_content
 
-def listToldraw(manual):
+def listToldraw(manual, height, width):
     ldraw_file_content = ""
     latitude, longitude = 45.0, 0.0
     ldraw_file_content = f"0 !LPUB ASSEM CAMERA_ANGLES {latitude}   {longitude}\n"
+    
+    assemble_content = ""
+    pl_max = 0
+    pl_set = set()
+    
     if len(manual) == 0:
         return ldraw_file_content
+    
     for entry in manual:
         if entry[-1] == -1:
-            ldraw_file_content += "0 STEP" + "\n"
+            assemble_content += "0 STEP" + "\n"
+            pl_max = max(pl_max, len(pl_set))
+            pl_set.clear()
             continue
         part_size = entry[2]
         row, col = entry[0]
         part_definition = f"1 0 0 0 0 1 0 -1 0 {brick[part_size]}"
         brick_color = entry[1]
+        pl_set.add((brick_color, part_size))
         ldraw_command = f"1 {color[brick_color]} {col * 20 + offset[part_size]} 0 {row * 24} {part_definition}"               
-        ldraw_file_content += ldraw_command + "\n"
+        assemble_content += ldraw_command + "\n"
+    
+    pl_max = max(pl_max, len(pl_set))
+    
+    if width > 25:
+        scale = (23 / width)
+        scale = round(scale, 2)
+        ldraw_file_content += f"0 !LPUB ASSEM MODEL_SCALE GLOBAL{scale: .4f}" + "\n"
+    
+    if pl_max > 6:
+        ldraw_file_content += f"0 !LPUB PLI MODEL_SCALE GLOBAL{6 / pl_max: .4f}" + "\n"
+        ldraw_file_content += f"0 !LPUB PLI INSTANCE_COUNT FONT \"Arial,{(int)(36 * 6 / pl_max)},-1,5,75,0,0,0,0,0,Bold\"\n"
+    
+    ldraw_file_content += assemble_content
     return ldraw_file_content
     
 def saveLdr(ldraw_file_content, dir):
