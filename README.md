@@ -1,10 +1,5 @@
 # 2023-1-CECD2-AImport-7
 
-<팀원>\
-2020112119 강동희\
-2018112558 김철희\
-2018112007 이승현
-
 ## Segmentation 사용법 (Linux 기준)
 - 참고 사이트: (https://github.com/open-mmlab/mmsegmentation/blob/main/docs/en/get_started.md)
 - 윈도우의 경우 0~2, 4과정의 경우 Annaconda의 conda prompt 사용을 추천드립니다.
